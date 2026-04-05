@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+*.db
+*.db-shm
+*.db-wal
+logs/
+plugins/
+application.yml
+docker-compose.yml
+cache/
+pnpm-debug.log
+.DS_Store
+prisma/migrations/

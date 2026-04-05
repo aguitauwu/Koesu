@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Guild {
+  id              String   @id
+  prefix          String   @default("!")
+  botName         String   @default("Koesu")
+  volume          Int      @default(100)
+  language        String   @default("es")
+  djRoleId        String?
+  logChannelId    String?
+  panelChannelId  String?
+  panelMessageId  String?
+  blockedGenres   String   @default("[]")
+  ttsApiKey       String?
+  ttsApiUrl       String?
+  ttsVoice        String   @default("default")
+  panelColor      String   @default("#5865F2")
+  panelTitle      String   @default("Koesu Music")
+  panelFooter     String   @default("Koesu")
+  panelThumbnail  Boolean  @default(true)
+  panelFields     String   @default("[]")
+  panelButtons    String   @default("[]")
+  maxQueuePerUser Int      @default(0)
+  voteSkipRatio   Float    @default(0.5)
+  webhookUrl      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  playlists    Playlist[]
+  voiceConfigs VoiceChannelConfig[]
+  stats        GuildStats?
+}
+
+model User {
+  id        String   @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  playlists Playlist[]
+  stats     UserStats?
+}
+
+model Playlist {
+  id        String       @id @default(cuid())
+  name      String
+  type      PlaylistType
+  isPublic  Boolean      @default(false)
+  guildId   String?
+  userId    String?
+  channelId String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  guild  Guild?  @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks Track[]
+}
+
+model Track {
+  id         String   @id @default(cuid())
+  title      String
+  author     String
+  url        String
+  duration   Int
+  thumbnail  String?
+  source     String
+  encoded    String?
+  playlistId String
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+}
+
+model VoiceChannelConfig {
+  id              String   @id @default(cuid())
+  guildId         String
+  channelId       String?
+  name            String   @default("vocal de {user}")
+  allowedRoles    String   @default("[]")
+  source          String?
+  playlistId      String?
+  inactiveTimeout Int      @default(300)
+  welcomeMessage  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+model GuildStats {
+  id          String   @id @default(cuid())
+  guildId     String   @unique
+  totalPlayed Int      @default(0)
+  totalTime   Int      @default(0)
+  topTracks   String   @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+model UserStats {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  totalPlayed Int      @default(0)
+  totalTime   Int      @default(0)
+  topTracks   String   @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum PlaylistType {
+  SERVER
+  PERSONAL
+  CHANNEL
+}

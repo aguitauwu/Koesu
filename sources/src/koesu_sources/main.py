@@ -98,6 +98,27 @@ async def serve_audio(request: web.Request) -> web.Response:
     )
 
 
+
+@routes.post("/dj/present")
+async def dj_present(request: web.Request) -> web.Response:
+    from .dj import generate_presentation, text_to_speech
+    body = await request.json()
+    title = body.get("title", "")
+    author = body.get("author", "")
+    source = body.get("source", "unknown")
+    language = body.get("language", "es")
+    api_url = body.get("apiUrl")
+    api_key = body.get("apiKey")
+    voice = body.get("voice", "alloy")
+    model = body.get("model", "gpt-4o-mini")
+
+    text = await generate_presentation(title, author, source, language, api_url, api_key, model)
+    if not text:
+        return web.json_response({"error": "No se pudo generar presentacion"}, status=500)
+
+    tts_url = await text_to_speech(text, api_url, api_key, voice)
+    return web.json_response({"text": text, "audioUrl": tts_url})
+
 async def main() -> None:
     os.makedirs(CACHE_DIR, exist_ok=True)
     app = web.Application()

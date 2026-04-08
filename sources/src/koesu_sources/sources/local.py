@@ -8,7 +8,7 @@ log = get_logger("sources.local")
 
 SUPPORTED_EXTENSIONS = {".opus", ".mp3", ".flac", ".ogg", ".wav", ".m4a", ".webm"}
 MUSIC_DIR = os.getenv("MUSIC_DIR", "/root/musica")
-SERVER_PORT = os.getenv("YTDLP_SERVER_PORT", "7331")
+SERVER_PORT = os.getenv("KOESU_HTTP_PORT", "7332")
 SERVER_HOST = os.getenv("YTDLP_SERVER_HOST", "172.17.0.1")
 
 

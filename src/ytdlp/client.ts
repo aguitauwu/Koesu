@@ -3,6 +3,7 @@ import { createLogger } from "../utils/logger.js";
 const log = createLogger("ytdlp:client");
 
 const YTDLP_URL = `http://${process.env.YTDLP_HOST ?? "localhost"}:${process.env.YTDLP_SERVER_PORT ?? 7331}`;
+const HTTP_URL = `http://${process.env.KOESU_HTTP_HOST ?? "localhost"}:${process.env.KOESU_HTTP_PORT ?? 7332}`;
 
 export interface ResolvedTrack {
   videoId: string;
@@ -39,7 +40,7 @@ export async function resolve(
 
 export async function scan(dir: string): Promise<{ title: string; filePath: string }[]> {
   try {
-    const res = await fetch(`${YTDLP_URL}/scan?dir=${encodeURIComponent(dir)}`, {
+    const res = await fetch(`${HTTP_URL}/scan?dir=${encodeURIComponent(dir)}`, {
       signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) return [];

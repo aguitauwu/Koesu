@@ -12,14 +12,7 @@ import { startRpcServer } from "./rpc/server.js";
 const log = createLogger("index");
 
 let ytdlpProc: ReturnType<typeof spawn> | null = null;
-
-function killPort(port: number): Promise<void> {
-  return new Promise((resolve) => {
-    const { execSync } = require("child_process") as typeof import("child_process");
-    try { execSync(`fuser -k ${port}/tcp`); } catch { /* ignore */ }
-    setTimeout(resolve, 500);
-  });
-}
+let httpProc: ReturnType<typeof spawn> | null = null;
 
 function startYtdlpServer(): void {
   if (ytdlpProc) {
@@ -29,7 +22,8 @@ function startYtdlpServer(): void {
   try {
     const { execSync } = require("child_process") as typeof import("child_process");
     execSync(`fuser -k ${process.env.YTDLP_SERVER_PORT ?? 7331}/tcp 2>/dev/null`, { stdio: "ignore" });
-  } catch { /* ignore */ }
+  } catch { }
+
   const env = {
     ...process.env,
     YTDLP_SERVER_PORT: process.env.YTDLP_SERVER_PORT ?? "7331",
@@ -52,6 +46,37 @@ function startYtdlpServer(): void {
   log.info("Servidor ytdlp iniciado");
 }
 
+function startKoesuHttp(): void {
+  if (httpProc) {
+    httpProc.kill("SIGKILL");
+    httpProc = null;
+  }
+  try {
+    const { execSync } = require("child_process") as typeof import("child_process");
+    execSync(`fuser -k ${process.env.KOESU_HTTP_PORT ?? 7332}/tcp 2>/dev/null`, { stdio: "ignore" });
+  } catch { }
+
+  const env = {
+    ...process.env,
+    KOESU_HTTP_PORT: process.env.KOESU_HTTP_PORT ?? "7332",
+    KOESU_HTTP_HOST: process.env.KOESU_HTTP_HOST ?? "172.17.0.1",
+    MUSIC_DIR: process.env.MUSIC_DIR ?? "/root/musica",
+    CACHE_DIR: process.env.CACHE_DIR ?? "/root/koesu/cache/audio",
+  };
+
+  httpProc = spawn("/root/koesu/koesu-http/target/release/koesu-http", [], {
+    env,
+    stdio: "inherit",
+  });
+
+  httpProc.on("exit", (code) => {
+    log.warn(`Servidor koesu-http termino con codigo ${code}, reiniciando...`);
+    setTimeout(startKoesuHttp, 3000);
+  });
+
+  log.info("Servidor koesu-http iniciado");
+}
+
 async function main(): Promise<void> {
   if (!existsSync(".env") || !process.env.DISCORD_TOKEN) {
     log.info("No se encontro configuracion. Iniciando wizard...");
@@ -60,6 +85,7 @@ async function main(): Promise<void> {
   }
 
   startYtdlpServer();
+  startKoesuHttp();
 
   const client = new KoesuClient();
 

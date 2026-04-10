@@ -3,6 +3,7 @@ package main
 import (
 "fmt"
 "koesu-gateway/internal/dashboard"
+"koesu-gateway/internal/proxy"
 "koesu-gateway/internal/watchdog"
 "os"
 "time"
@@ -19,6 +20,19 @@ func main() {
 	m := dashboard.New()
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
+	dashboard.StartLogServer(p)
+	dashboard.WatchLogs(p, "/tmp/koesu-bot.log")
+
+	go func() {
+		px := proxy.New([]*proxy.Node{
+{Host: host, Port: "2334", Password: password, Active: true},
+})
+		px.StartHealthCheck(5 * time.Second)
+		if err := px.ListenAndServe(":2333"); err != nil {
+			fmt.Fprintf(os.Stderr, "proxy error: %v\n", err)
+		}
+	}()
+
 	wd := watchdog.New(host, port, password, rpcPort)
 
 	go func() {
@@ -30,7 +44,6 @@ func main() {
 		p.Send(dashboard.ProgressMsg{Progress: 1.0, Message: "¡Listo!"})
 	}()
 
-	dashboard.WatchLogs(p, "/tmp/koesu-bot.log")
 	wd.StartPolling(1*time.Second, func(status watchdog.Status) {
 p.Send(dashboard.ServiceMsg{Index: 0, Online: status.PythonOnline})
 p.Send(dashboard.ServiceMsg{Index: 1, Online: status.RustOnline})

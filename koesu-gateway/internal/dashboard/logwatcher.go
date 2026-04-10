@@ -11,6 +11,8 @@ tea "github.com/charmbracelet/bubbletea"
 
 func WatchLogs(p *tea.Program, logFile string) {
 	go func() {
+		var offset int64
+
 		for {
 			f, err := os.Open(logFile)
 			if err != nil {
@@ -18,55 +20,42 @@ func WatchLogs(p *tea.Program, logFile string) {
 				continue
 			}
 
-			f.Seek(0, 2)
+			info, _ := f.Stat()
+			if offset == 0 {
+				offset = info.Size()
+			}
+
+			f.Seek(offset, 0)
 			scanner := bufio.NewScanner(f)
 
 			for scanner.Scan() {
-				line := scanner.Text()
-				if line == "" {
+				line := stripANSI(scanner.Text())
+				line = strings.TrimSpace(line)
+				if line == "" || !strings.Contains(line, "[Koesu]") {
 					continue
 				}
-				level, msg := parseLine(line)
-				if msg != "" {
-					p.Send(AddLogMsg{Level: level, Message: msg})
+
+				idx := strings.Index(line, "[Koesu]")
+				msg := strings.TrimSpace(line[idx+7:])
+				if msg == "" {
+					continue
 				}
+
+				level := "INFO"
+				if strings.Contains(line, "WARN") {
+					level = "WARN"
+				} else if strings.Contains(line, "ERROR") {
+					level = "ERROR"
+				}
+
+				p.Send(AddLogMsg{Level: level, Message: msg})
 			}
 
+			offset, _ = f.Seek(0, 1)
 			f.Close()
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(200 * time.Millisecond)
 		}
 	}()
-}
-
-func parseLine(line string) (string, string) {
-	line = stripANSI(line)
-
-	level := "INFO"
-	if strings.Contains(line, "WARN") {
-		level = "WARN"
-	} else if strings.Contains(line, "ERROR") {
-		level = "ERROR"
-	}
-
-	idx := strings.Index(line, "[Koesu]")
-	if idx != -1 {
-		msg := strings.TrimSpace(line[idx+7:])
-		if msg != "" {
-			return level, msg
-		}
-	}
-
-	if strings.Contains(line, "server_started") {
-		return "INFO", "Servidor Python iniciado"
-	}
-	if strings.Contains(line, "presentation_generated") {
-		return "INFO", "DJ presentación generada"
-	}
-	if strings.Contains(line, "tts_generated") {
-		return "INFO", "TTS generado"
-	}
-
-	return "", ""
 }
 
 func stripANSI(s string) string {

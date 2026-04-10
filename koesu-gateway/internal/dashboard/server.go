@@ -10,8 +10,6 @@ tea "github.com/charmbracelet/bubbletea"
 type LogPayload struct {
 	Level   string `json:"level"`
 	Message string `json:"msg"`
-	Module  string `json:"module"`
-	Time    string `json:"time"`
 }
 
 func StartLogServer(p *tea.Program) {
@@ -26,10 +24,7 @@ if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		p.Send(AddLogMsg{
-Level:   payload.Level,
-Message: payload.Message,
-})
+		p.Send(AddLogMsg{Level: payload.Level, Message: payload.Message})
 		w.WriteHeader(http.StatusOK)
 	})
 	go http.ListenAndServe(":7333", mux)

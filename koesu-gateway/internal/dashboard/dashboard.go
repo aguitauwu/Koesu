@@ -19,17 +19,17 @@ gray     = lipgloss.Color("#6C757D")
 white    = lipgloss.Color("#F8F9FA")
 darkGray = lipgloss.Color("#2D2D2D")
 
-titleStyle  = lipgloss.NewStyle().Foreground(purple).Bold(true)
+titleStyle   = lipgloss.NewStyle().Foreground(purple).Bold(true)
 	successStyle = lipgloss.NewStyle().Foreground(green)
-	errorStyle  = lipgloss.NewStyle().Foreground(red)
-	warnStyle   = lipgloss.NewStyle().Foreground(yellow)
-	infoStyle   = lipgloss.NewStyle().Foreground(blue)
-	grayStyle   = lipgloss.NewStyle().Foreground(gray)
-	whiteStyle  = lipgloss.NewStyle().Foreground(white)
-	barFill     = lipgloss.NewStyle().Foreground(purple)
-	barEmpty    = lipgloss.NewStyle().Foreground(darkGray)
-	borderStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#4A4A6A"))
-	liveRed     = lipgloss.NewStyle().Foreground(red).Bold(true)
+	errorStyle   = lipgloss.NewStyle().Foreground(red)
+	warnStyle    = lipgloss.NewStyle().Foreground(yellow)
+	infoStyle    = lipgloss.NewStyle().Foreground(blue)
+	grayStyle    = lipgloss.NewStyle().Foreground(gray)
+	whiteStyle   = lipgloss.NewStyle().Foreground(white)
+	barFill      = lipgloss.NewStyle().Foreground(purple)
+	barEmpty     = lipgloss.NewStyle().Foreground(darkGray)
+	borderStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#4A4A6A"))
+	liveRed      = lipgloss.NewStyle().Foreground(red).Bold(true)
 )
 
 const ascii = `
@@ -278,7 +278,7 @@ func renderDashboard(m Model) string {
 	if m.uptime > 0 {
 		h := m.uptime / 3600000
 		min := (m.uptime % 3600000) / 60000
-		uptimeStr = fmt.Sprintf("  Uptime: %dh %dm", h, min)
+		uptimeStr = fmt.Sprintf("Uptime: %dh %dm", h, min)
 	}
 
 	sb.WriteString(fmt.Sprintf(" %s        %s\n",
@@ -300,7 +300,7 @@ m.cpuLoad*100,
 m.memUsed/1024/1024,
 )
 		}
-		if i == 1 && m.lavalink {
+		if i == 1 {
 			lavaDot := successStyle.Render("●")
 			lavaStatus := successStyle.Render("✓ Online")
 			if !m.lavalink {
@@ -327,12 +327,10 @@ grayStyle.Render(m.nowAuthor),
 
 		if m.isLive {
 			sb.WriteString(grayStyle.Render(m.playDuration) + " ")
-			liveStr := "LIVE"
-			dot := "●"
 			if m.liveOn {
-				sb.WriteString(liveRed.Render(liveStr) + " " + liveRed.Render(dot))
+				sb.WriteString(liveRed.Render("LIVE") + " " + liveRed.Render("●"))
 			} else {
-				sb.WriteString(liveRed.Render(liveStr) + "  ")
+				sb.WriteString(liveRed.Render("LIVE") + "  ")
 			}
 		} else {
 			total := 30

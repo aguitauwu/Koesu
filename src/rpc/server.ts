@@ -73,6 +73,26 @@ export async function startRpcServer(client: KoesuClient): Promise<void> {
     }
   );
 
+  fastify.get("/status", async (_request, reply) => {
+    const players = [];
+    for (const [guildId, player] of client.lavalink.players) {
+      const track = player.queue.current;
+      players.push({
+        guildId,
+        track: track ? {
+          title: track.info.title,
+          author: track.info.author,
+          duration: track.info.duration > 9000000000000 ? 0 : track.info.duration,
+          position: player.position,
+        } : null,
+        queueSize: player.queue.tracks.length,
+        playing: player.playing,
+        paused: player.paused,
+      });
+    }
+    return reply.send({ players });
+  });
+
   const port = Number(process.env.RPC_PORT ?? 3000);
   await fastify.listen({ port, host: "0.0.0.0" });
   log.info(`RPC server escuchando en puerto ${port}`);

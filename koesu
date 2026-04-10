@@ -1,0 +1,24 @@
+#!/bin/bash
+pkill -9 -f "koesu-gateway\|uv run\|koesu-http" 2>/dev/null
+fuser -k 7331/tcp 7332/tcp 7333/tcp 3000/tcp 2>/dev/null
+sleep 1
+
+export $(grep -v "^#" /root/koesu/.env | xargs)
+
+cd /root/koesu && pnpm dev > /tmp/koesu-bot.log 2>&1 &
+BOT_PID=$!
+
+echo "Esperando servicios..."
+for i in $(seq 1 30); do
+  if curl -s http://localhost:7331/health > /dev/null 2>&1; then
+    echo "Python listo"
+    break
+  fi
+  sleep 1
+done
+
+trap "kill $BOT_PID 2>/dev/null; pkill -f koesu-gateway 2>/dev/null; exit" INT TERM
+
+/root/koesu/koesu-gateway/koesu-gateway
+
+kill $BOT_PID 2>/dev/null

@@ -1,4 +1,5 @@
 import os
+import subprocess
 from pathlib import Path
 from typing import Optional, List
 from .base import BaseSource, ResolvedTrack
@@ -10,6 +11,18 @@ SUPPORTED_EXTENSIONS = {".opus", ".mp3", ".flac", ".ogg", ".wav", ".m4a", ".webm
 MUSIC_DIR = os.getenv("MUSIC_DIR", "/root/musica")
 SERVER_PORT = os.getenv("KOESU_HTTP_PORT", "7332")
 SERVER_HOST = os.getenv("YTDLP_SERVER_HOST", "172.17.0.1")
+
+
+def get_duration(path: str) -> int:
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", path],
+            capture_output=True, text=True, timeout=5
+        )
+        return int(float(result.stdout.strip()) * 1000)
+    except Exception:
+        return 0
 
 
 class LocalSource(BaseSource):
@@ -31,7 +44,7 @@ class LocalSource(BaseSource):
             video_id=name,
             title=name,
             author="Local",
-            duration=0,
+            duration=get_duration(path),
             thumbnail="",
             stream_url=self._http_url(path),
             source="local",
@@ -52,7 +65,7 @@ class LocalSource(BaseSource):
                         video_id=name,
                         title=name,
                         author="Local",
-                        duration=0,
+                        duration=get_duration(full_path),
                         thumbnail="",
                         stream_url=self._http_url(full_path),
                         source="local",

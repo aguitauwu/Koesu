@@ -24,7 +24,7 @@ services:
       - ./application.yml:/opt/Lavalink/application.yml
       - ./plugins:/opt/Lavalink/plugins
     ports:
-      - "2333:2333"
+      - "2334:2333"
     depends_on:
       - redis
 

@@ -32,7 +32,7 @@ function startYtdlpServer(): void {
     CACHE_MAX_MB: process.env.CACHE_MAX_MB ?? "500",
   };
 
-  ytdlpProc = spawn("uv", ["run", "python", "-m", "koesu_sources.main"], {
+  ytdlpProc = spawn("/root/koesu/sources/.venv/bin/python", ["-m", "koesu_sources.main"], {
     env,
     stdio: "inherit",
     cwd: "/root/koesu/sources",

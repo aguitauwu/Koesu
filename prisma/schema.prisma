@@ -29,12 +29,15 @@ model Guild {
   maxQueuePerUser Int      @default(0)
   voteSkipRatio   Float    @default(0.5)
   webhookUrl      String?
+  isPublicRadio   Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   playlists    Playlist[]
   voiceConfigs VoiceChannelConfig[]
   stats        GuildStats?
+  history      PlayHistory[]
+  adminConfig  GuildAdminConfig?
 }
 
 model User {
@@ -42,8 +45,106 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  playlists Playlist[]
-  stats     UserStats?
+  playlists        Playlist[]
+  stats            UserStats?
+  profile          UserProfile?
+  history          PlayHistory[]
+  sentRequests     Friendship[]    @relation("UserFriends")
+  receivedRequests Friendship[]    @relation("FriendOf")
+  downloadTokens   DownloadToken[]
+  recommendations  SongRecommendation[] @relation("RecommendedBy")
+  receivedRecs     SongRecommendation[] @relation("RecommendedTo")
+  comments         SongComment[]
+  collaborativePlaylists CollaborativePlaylistMember[]
+  wrappedStats     WrappedStats[]
+}
+
+model UserProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  bio         String?
+  isPublic    Boolean  @default(true)
+  topGenres   String   @default("[]")
+  accentColor String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Friendship {
+  id        String           @id @default(cuid())
+  userId    String
+  friendId  String
+  status    FriendshipStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user   User @relation("UserFriends", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("FriendOf", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+}
+
+model PlayHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  guildId   String
+  title     String
+  author    String
+  url       String
+  source    String
+  duration  Int      @default(0)
+  thumbnail String?
+  playedAt  DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+model DownloadToken {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String    @unique @default(cuid())
+  url       String
+  title     String
+  source    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SongRecommendation {
+  id          String   @id @default(cuid())
+  fromUserId  String
+  toUserId    String
+  title       String
+  author      String
+  url         String
+  source      String
+  thumbnail   String?
+  message     String?
+  seen        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  fromUser User @relation("RecommendedBy", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("RecommendedTo", fields: [toUserId], references: [id], onDelete: Cascade)
+}
+
+model SongComment {
+  id        String   @id @default(cuid())
+  userId    String
+  url       String
+  title     String
+  author    String
+  content   String
+  likes     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Playlist {
@@ -57,9 +158,32 @@ model Playlist {
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
-  guild  Guild?  @relation(fields: [guildId], references: [id], onDelete: Cascade)
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tracks Track[]
+  guild        Guild?  @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  user         User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks       Track[]
+  collaborative CollaborativePlaylist?
+}
+
+model CollaborativePlaylist {
+  id         String   @id @default(cuid())
+  playlistId String   @unique
+  createdAt  DateTime @default(now())
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  members  CollaborativePlaylistMember[]
+}
+
+model CollaborativePlaylistMember {
+  id           String   @id @default(cuid())
+  playlistId   String
+  userId       String
+  canEdit      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  playlist CollaborativePlaylist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  user     User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, userId])
 }
 
 model Track {
@@ -118,8 +242,45 @@ model UserStats {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model WrappedStats {
+  id            String   @id @default(cuid())
+  userId        String
+  year          Int
+  totalPlayed   Int      @default(0)
+  totalTime     Int      @default(0)
+  topTracks     String   @default("[]")
+  topArtists    String   @default("[]")
+  topGenres     String   @default("[]")
+  topSources    String   @default("[]")
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, year])
+}
+
+model GuildAdminConfig {
+  id              String   @id @default(cuid())
+  guildId         String   @unique
+  adminRoleId     String?
+  allowWebControl Boolean  @default(true)
+  allowDownloads  Boolean  @default(true)
+  allowPublicRadio Boolean @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
 enum PlaylistType {
   SERVER
   PERSONAL
   CHANNEL
+  COLLABORATIVE
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
 }

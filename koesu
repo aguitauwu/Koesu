@@ -19,6 +19,10 @@ done
 
 trap "kill $BOT_PID 2>/dev/null; pkill -f koesu-gateway 2>/dev/null; exit" INT TERM
 
+cd /root/koesu/koesu-web/api && bun run src/index.ts > /tmp/koesu-api.log 2>&1 &
+API_PID=$!
+sleep 1
+
 /root/koesu/koesu-gateway/koesu-gateway
 
 kill $BOT_PID 2>/dev/null

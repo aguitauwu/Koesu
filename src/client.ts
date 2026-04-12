@@ -69,11 +69,7 @@ export class KoesuClient extends Client {
           id: "koesu-node",
           retryAmount: 20,
           retryDelay: 5_000,
-          resumeStatus: true,
-          resumeTimeout: 60,
           heartBeatInterval: 30_000,
-          resumeStatus: true,
-          resumeTimeout: 60,
         },
       ],
       sendToShard: (guildId, payload) => {

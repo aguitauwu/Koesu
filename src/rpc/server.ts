@@ -93,6 +93,47 @@ export async function startRpcServer(client: KoesuClient): Promise<void> {
     return reply.send({ players });
   });
 
+  fastify.get("/db/history/:userId", async (request, reply) => {
+    const { userId } = request.params as { userId: string };
+    const page = Number((request.query as any).page ?? 1);
+    const limit = Number((request.query as any).limit ?? 20);
+    const items = await client.prisma.playHistory.findMany({
+      where: { userId },
+      orderBy: { playedAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return reply.send(items);
+  });
+
+  fastify.get("/db/stats/:userId", async (request, reply) => {
+    const { userId } = request.params as { userId: string };
+    const stats = await client.prisma.userStats.findUnique({ where: { userId } });
+    return reply.send(stats ?? { totalPlayed: 0, totalTime: 0 });
+  });
+
+  fastify.post("/db/profile/:userId", async (request, reply) => {
+    const { userId } = request.params as { userId: string };
+    const { create, update } = request.body as any;
+    await client.prisma.user.upsert({
+      where: { id: userId },
+      create: { id: userId },
+      update: {},
+    });
+    const profile = await client.prisma.userProfile.upsert({
+      where: { userId },
+      create: { userId, ...create },
+      update: { ...update },
+    });
+    return reply.send(profile);
+  });
+
+  fastify.get("/db/profile/:userId", async (request, reply) => {
+    const { userId } = request.params as { userId: string };
+    const profile = await client.prisma.userProfile.findUnique({ where: { userId } });
+    return reply.send(profile);
+  });
+
   const port = Number(process.env.RPC_PORT ?? 3000);
   await fastify.listen({ port, host: "0.0.0.0" });
   log.info(`RPC server escuchando en puerto ${port}`);

@@ -46,6 +46,34 @@ export function registerLavalink(client: KoesuClient): void {
       update: { totalPlayed: { increment: 1 } },
     });
 
+    const voiceChannelMembers = client.guilds.cache
+      .get(player.guildId)
+      ?.channels.cache.get(player.voiceChannelId ?? "");
+
+    if (voiceChannelMembers?.isVoiceBased()) {
+      for (const [memberId] of voiceChannelMembers.members) {
+        if (memberId === client.user?.id) continue;
+        await client.prisma.playHistory.create({
+          data: {
+            userId: memberId,
+            guildId: player.guildId,
+            title: track.info.title,
+            author: track.info.author,
+            url: track.info.uri ?? "",
+            source: track.info.sourceName ?? "unknown",
+            duration: track.info.duration ?? 0,
+            thumbnail: track.info.artworkUrl ?? null,
+          },
+        }).catch(() => null);
+
+        await client.prisma.userStats.upsert({
+          where: { userId: memberId },
+          create: { userId: memberId, totalPlayed: 1 },
+          update: { totalPlayed: { increment: 1 } },
+        }).catch(() => null);
+      }
+    }
+
     if (guildConfig?.logChannelId) {
       const channel = client.channels.cache.get(guildConfig.logChannelId);
       if (channel && 'send' in channel) {

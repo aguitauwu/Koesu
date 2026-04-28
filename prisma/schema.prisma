@@ -216,6 +216,8 @@ model VoiceChannelConfig {
   updatedAt       DateTime @updatedAt
 
   guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId])
 }
 
 model GuildStats {

@@ -20,18 +20,24 @@ export default {
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
     const client = interaction.client as KoesuClient;
     const member = interaction.member as GuildMember;
+    const guildId = interaction.guildId;
     const page = interaction.options.getInteger("pagina") ?? 1;
 
     await interaction.deferReply({ ephemeral: true });
 
-    const player = client.lavalink.getPlayer(interaction.guildId!);
+    if (!guildId) {
+      await interaction.editReply({ embeds: [buildErrorEmbed("Este comando solo funciona en servidores")] });
+      return;
+    }
+
+    const player = client.lavalink.getPlayer(guildId);
     if (!player) {
       await interaction.editReply({ embeds: [buildErrorEmbed("No hay musica reproduciendose")] });
       return;
     }
 
     const guildConfig = await client.prisma.guild.findUnique({
-      where: { id: interaction.guildId! },
+      where: { id: guildId },
     });
 
     const config = {

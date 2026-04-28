@@ -44,16 +44,26 @@ export default {
     }
 
     let player = client.lavalink.getPlayer(guildId);
+    const createdForSearch = !player;
     if (!player) {
+      const voiceChannelId = member.voice.channelId;
+      if (!voiceChannelId) {
+        await interaction.editReply({ embeds: [buildErrorEmbed("Debes estar en un canal de voz")] });
+        return;
+      }
       player = client.lavalink.createPlayer({
         guildId,
-        voiceChannelId: "0",
+        voiceChannelId,
         textChannelId: interaction.channelId,
         selfDeaf: true,
       });
     }
 
     const result = await player.search({ query }, member);
+
+    if (createdForSearch) {
+      player.destroy().catch(() => null);
+    }
 
     if (!result || result.loadType === "error" || result.loadType === "empty") {
       await interaction.editReply({ embeds: [buildErrorEmbed("No se encontraron resultados")] });

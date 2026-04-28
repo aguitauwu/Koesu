@@ -29,8 +29,8 @@ class LocalSource(BaseSource):
     def can_handle(self, url: str) -> bool:
         return url.startswith("file://") or url.startswith("/")
 
-    async def search(self, query: str, music_dir: str = MUSIC_DIR) -> Optional[ResolvedTrack]:
-        tracks = self.scan(music_dir)
+    async def search(self, query: str) -> Optional[ResolvedTrack]:
+        tracks = self.scan(MUSIC_DIR)
         q = query.lower()
         match = next((t for t in tracks if q in t.title.lower()), None)
         return match

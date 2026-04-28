@@ -50,7 +50,13 @@ export default {
       return;
     }
 
-    const key = `${guildId}:${player.queue.current?.encoded}`;
+    const currentTrack = player.queue.current;
+    if (!currentTrack) {
+      await interaction.editReply({ embeds: [buildErrorEmbed("No hay cancion actual para votar")] });
+      return;
+    }
+
+    const key = `${guildId}:${currentTrack.encoded}`;
     if (!voteSkipMap.has(key)) voteSkipMap.set(key, new Set());
     const votes = voteSkipMap.get(key) as Set<string>;
     votes.add(member.id);

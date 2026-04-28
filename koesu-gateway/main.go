@@ -16,6 +16,7 @@ func main() {
 	port := getEnv("LAVALINK_PORT", "2333")
 	password := getEnv("LAVALINK_PASSWORD", "koesu")
 	rpcPort := getEnv("RPC_PORT", "3000")
+	internalPort := getEnv("LAVALINK_INTERNAL_PORT", "2334")
 
 	m := dashboard.New()
 	p := tea.NewProgram(m, tea.WithAltScreen())
@@ -25,10 +26,10 @@ func main() {
 
 	go func() {
 		px := proxy.New([]*proxy.Node{
-{Host: host, Port: "2334", Password: password, Active: true},
+{Host: host, Port: internalPort, Password: password, Active: true},
 })
 		px.StartHealthCheck(5 * time.Second)
-		if err := px.ListenAndServe(":2333"); err != nil {
+		if err := px.ListenAndServe(":" + port); err != nil {
 			fmt.Fprintf(os.Stderr, "proxy error: %v\n", err)
 		}
 	}()

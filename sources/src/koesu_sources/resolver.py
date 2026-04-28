@@ -58,7 +58,7 @@ async def resolve_by_source(
         case "local":
             if is_url and local.can_handle(query):
                 return await local.resolve(query)
-            return await local.search(query, music_dir)
+            return await local.search(query)
 
         case "soundcloud":
             if is_url and soundcloud.can_handle(query):

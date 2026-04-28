@@ -37,7 +37,11 @@ export default {
       return;
     }
 
-    await player.pause();
+    if (player.paused) {
+      await player.resume();
+    } else {
+      await player.pause();
+    }
     await updatePanel(client, guildId, player.queue.current);
 
     await interaction.editReply({

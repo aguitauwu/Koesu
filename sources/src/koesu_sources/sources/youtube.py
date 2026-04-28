@@ -25,12 +25,12 @@ class YouTubeSource(BaseSource):
         return "youtube.com" in url or "youtu.be" in url
 
     async def search(self, query: str) -> Optional[ResolvedTrack]:
-        return await asyncio.get_event_loop().run_in_executor(
+        return await asyncio.get_running_loop().run_in_executor(
             None, self._search_sync, query
         )
 
     async def resolve(self, url: str) -> Optional[ResolvedTrack]:
-        return await asyncio.get_event_loop().run_in_executor(
+        return await asyncio.get_running_loop().run_in_executor(
             None, self._resolve_sync, url
         )
 
@@ -99,7 +99,7 @@ class YouTubeSource(BaseSource):
         )
 
     async def download(self, url: str, video_id: str) -> Optional[str]:
-        return await asyncio.get_event_loop().run_in_executor(
+        return await asyncio.get_running_loop().run_in_executor(
             None, self._download_sync, url, video_id
         )
 

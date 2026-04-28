@@ -13,12 +13,12 @@ class SoundCloudSource(BaseSource):
         return "soundcloud.com" in url
 
     async def search(self, query: str) -> Optional[ResolvedTrack]:
-        return await asyncio.get_event_loop().run_in_executor(
+        return await asyncio.get_running_loop().run_in_executor(
             None, self._search_sync, query
         )
 
     async def resolve(self, url: str) -> Optional[ResolvedTrack]:
-        return await asyncio.get_event_loop().run_in_executor(
+        return await asyncio.get_running_loop().run_in_executor(
             None, self._resolve_sync, url
         )
 
@@ -35,7 +35,7 @@ class SoundCloudSource(BaseSource):
                 if not info or "entries" not in info:
                     return None
                 return self._build_track(info["entries"][0])
-        except (DownloadError, Exception) as e:
+        except Exception as e:
             log.error("search_failed", query=query, error=str(e))
             return None
 

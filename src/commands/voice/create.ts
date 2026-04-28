@@ -56,7 +56,10 @@ export default {
       const playlist = await client.prisma.playlist.findFirst({
         where: {
           name: playlistNombre,
-          OR: [{ userId: member.id }, { guildId }],
+          OR: [
+            { userId: member.id },
+            { guildId, isPublic: true, type: "SERVER" },
+          ],
         },
       });
       if (playlist) playlistId = playlist.id;
@@ -112,25 +115,53 @@ function scheduleInactivityCheck(
   guildId: string,
   timeout: number
 ): void {
+  const lastActivity = new Map<string, number>();
+  const now = Date.now();
+  const guild = client.guilds.cache.get(guildId);
+  if (!guild) return;
+  const channel = guild.channels.cache.get(channelId);
+  if (!channel?.isVoiceBased()) return;
+  for (const [memberId] of channel.members.filter((m) => !m.user.bot)) {
+    lastActivity.set(memberId, now);
+  }
+
   const interval = setInterval(async () => {
-    const guild = client.guilds.cache.get(guildId);
-    if (!guild) { clearInterval(interval); return; }
+    const g = client.guilds.cache.get(guildId);
+    if (!g) { clearInterval(interval); return; }
 
-    const channel = guild.channels.cache.get(channelId);
-    if (!channel?.isVoiceBased()) { clearInterval(interval); return; }
+    const ch = g.channels.cache.get(channelId);
+    if (!ch?.isVoiceBased()) { clearInterval(interval); return; }
 
-    const members = channel.members.filter((m) => !m.user.bot);
+    const members = ch.members.filter((m) => !m.user.bot);
     if (members.size === 0) {
-      await channel.delete().catch(() => null);
+      await ch.delete().catch(() => null);
       await client.prisma.voiceChannelConfig.deleteMany({ where: { channelId } });
       clearInterval(interval);
       return;
     }
 
-    for (const [, m] of members) {
-      if (!m.voice.selfVideo) {
+    const currentTime = Date.now();
+    for (const [memberId, m] of members) {
+      const last = lastActivity.get(memberId) ?? now;
+      if (currentTime - last > timeout * 1000) {
         await m.voice.disconnect().catch(() => null);
+        lastActivity.delete(memberId);
       }
     }
-  }, timeout * 1000);
+
+    for (const [memberId] of members) {
+      if (!lastActivity.has(memberId)) {
+        lastActivity.set(memberId, currentTime);
+      }
+    }
+  }, Math.min(timeout * 1000, 30_000));
+
+  client.on("voiceStateUpdate", (oldState, newState) => {
+    if (newState.channelId === channelId && newState.member) {
+      lastActivity.set(newState.member.id, Date.now());
+    }
+    if (oldState.channelId === channelId && newState.channelId !== channelId && oldState.member) {
+      lastActivity.delete(oldState.member.id);
+    }
+  });
 }

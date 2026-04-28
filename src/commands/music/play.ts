@@ -101,6 +101,10 @@ export default {
       }
 
       const track = result.tracks[0];
+      if (!track) {
+        await interaction.editReply({ embeds: [buildErrorEmbed("No se encontro audio para esta fuente")] });
+        return;
+      }
       track.info.title = resolved.title;
       track.info.author = resolved.author;
 
@@ -143,18 +147,6 @@ export default {
 
     await updatePanel(client, guildId, player.queue.current);
 
-    await client.prisma.guild.upsert({
-      where: { id: guildId },
-      create: { id: guildId },
-      update: {},
-    });
-
-    await client.prisma.user.upsert({
-      where: { id: member.id },
-      create: { id: member.id },
-      update: {},
-    });
-
     await client.prisma.guildStats.upsert({
       where: { guildId },
       create: { guildId, totalPlayed: 1 },
@@ -179,9 +171,9 @@ function detectSource(query: string, source: string): string {
   return "ytsearch";
 }
 
-async function getBestNode(client: KoesuClient): Promise<string> {
+function getBestNode(client: KoesuClient): string {
   const nodes = client.lavalink.nodeManager.nodes;
-  let bestNode = [...nodes.values()][0];
+  let bestNode: { id: string; connected: boolean; stats?: { cpu?: { lavalinkLoad?: number }; playingPlayers?: number } } | undefined;
   let bestPenalty = Infinity;
 
   for (const node of nodes.values()) {

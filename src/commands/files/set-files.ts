@@ -20,7 +20,6 @@ export default {
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
     const client = interaction.client as KoesuClient;
-    const guildId = interaction.guildId as string;
 
     await interaction.deferReply({ ephemeral: true });
 

@@ -57,6 +57,10 @@ export default {
       }
 
       const track = result.tracks[0];
+      if (!track) {
+        await interaction.editReply({ embeds: [buildErrorEmbed("Test fallido: no se encontro audio local")] });
+        return;
+      }
       track.info.title = resolved.title;
       track.info.author = "Local";
 
@@ -76,12 +80,16 @@ export default {
       }
 
       const track = result.tracks[0];
+      if (!track) {
+        await interaction.editReply({ embeds: [buildErrorEmbed("Test fallido: no se encontro Bad Apple en YouTube")] });
+        return;
+      }
       await player.queue.add(track);
       if (!player.playing) await player.play();
       await updatePanel(client, guildId, player.queue.current);
 
       await interaction.editReply({
-        embeds: [buildSuccessEmbed(`Test exitoso via SoundCloud/Lavalink. Reproduciendo: **${track.info.title}**`)],
+        embeds: [buildSuccessEmbed(`Test exitoso via YouTube/Lavalink. Reproduciendo: **${track.info.title}**`)],
       });
     }
   },

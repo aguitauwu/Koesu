@@ -34,6 +34,13 @@ export default {
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
     const client = interaction.client as KoesuClient;
     const member = interaction.member as GuildMember;
+    const guildId = interaction.guildId;
+
+    if (!guildId) {
+      await interaction.deferReply({ ephemeral: true });
+      await interaction.editReply({ embeds: [buildErrorEmbed("Este comando solo funciona en servidores")] });
+      return;
+    }
 
     await interaction.deferReply({ ephemeral: true });
 
@@ -46,7 +53,7 @@ export default {
       where: {
         name: nombre,
         type: tipo,
-        ...(tipo === "PERSONAL" ? { userId: member.id } : { guildId: interaction.guildId! }),
+        ...(tipo === "PERSONAL" ? { userId: member.id } : { guildId }),
       },
     });
 
@@ -64,8 +71,8 @@ export default {
     });
 
     await client.prisma.guild.upsert({
-      where: { id: interaction.guildId! },
-      create: { id: interaction.guildId! },
+      where: { id: guildId },
+      create: { id: guildId },
       update: {},
     });
 
@@ -74,7 +81,7 @@ export default {
         name: nombre,
         type: tipo,
         isPublic: publica,
-        ...(tipo === "PERSONAL" ? { userId: member.id } : { guildId: interaction.guildId! }),
+        ...(tipo === "PERSONAL" ? { userId: member.id } : { guildId }),
         ...(tipo === "CHANNEL" && canal ? { channelId: canal.id } : {}),
       },
     });

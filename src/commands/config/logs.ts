@@ -36,7 +36,12 @@ export default {
       where: { id: guildId },
     });
 
-    let blocked: string[] = JSON.parse(guild?.blockedGenres ?? "[]");
+    let blocked: string[] = [];
+    try {
+      blocked = JSON.parse(guild?.blockedGenres ?? "[]");
+    } catch {
+      blocked = [];
+    }
 
     if (bloquear) {
       const toBlock = bloquear.split(",").map((g) => g.trim().toLowerCase());

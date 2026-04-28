@@ -37,7 +37,7 @@ export default {
     if (bienvenida !== null) data.welcomeMessage = bienvenida;
 
     await client.prisma.voiceChannelConfig.upsert({
-      where: { id: guildId },
+      where: { guildId },
       create: { guildId, ...data },
       update: data,
     });
